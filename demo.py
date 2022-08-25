@@ -52,6 +52,7 @@ class Demo:
         model_saver = experiment.train.model_saver
         self.structure = experiment.structure
         self.model_path = self.args['resume']
+        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     def init_torch_tensor(self):
         # Use gpu or not
@@ -63,6 +64,8 @@ class Demo:
             self.device = torch.device('cpu')
 
     def init_model(self):
+        print("Model device set to ", self.device)
+        #self.device = torch.device('cpu')
         model = self.structure.builder.build(self.device)
         return model
 
@@ -90,14 +93,18 @@ class Demo:
     def load_image(self, image_path):
         img = cv2.imread(image_path, cv2.IMREAD_COLOR).astype('float32')
         original_shape = img.shape[:2]
+        #print(original_shape, type(original_shape))
+        #original_shape = torch.Tensor(*original_shape).to(self.device)
         img = self.resize_image(img)
         img -= self.RGB_MEAN
         img /= 255.
-        img = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0)
+        img = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
         return img, original_shape
         
     def format_output(self, batch, output):
         batch_boxes, batch_scores = output
+        print(batch_boxes)
+        print(batch_scores)
         for index in range(batch['image'].size(0)):
             original_shape = batch['shape'][index]
             filename = batch['filename'][index]
@@ -124,7 +131,7 @@ class Demo:
         
     def inference(self, image_path, visualize=False):
         self.init_torch_tensor()
-        model = self.init_model()
+        model: torch.nn.Module = self.init_model()
         self.resume(model, self.model_path)
         all_matircs = {}
         model.eval()
@@ -135,6 +142,7 @@ class Demo:
         with torch.no_grad():
             batch['image'] = img
             pred = model.forward(batch, training=False)
+            print(pred)
             output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
             if not os.path.isdir(self.args['result_dir']):
                 os.mkdir(self.args['result_dir'])

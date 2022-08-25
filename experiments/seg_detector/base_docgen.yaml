@@ -6,7 +6,7 @@ define:
   - name: train_data
     class: ImageDataset
     data_dir:
-        - './datasets/ocrdocgen/'
+        - './datasets/ocrdocgen'
     data_list:
         - './datasets/ocrdocgen/train_list.txt'
     processes:
@@ -30,7 +30,7 @@ define:
   - name: validate_data
     class: ImageDataset
     data_dir:
-        - './datasets/ocrdocgen/'
+        - './datasets/ocrdocgen'
     data_list:
         - './datasets/ocrdocgen/test_list.txt'
     processes:
